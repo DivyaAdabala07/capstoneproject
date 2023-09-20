@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1>Spotify Song Player</h1>
+    <input type="text" id="search-input" placeholder="Search for a song">
+    <button id="search-button">Search</button>
+
+    <div id="song-container">
+        
+    </div>
+    <script>
+        // Replace these with your own Spotify API credentials
+        const clientId = '356353159de3422697e3ac1c984537ac';
+        const clientSecret = '050c0260f5994bb8851727538725738a';
+
+        // Spotify API endpoints
+        const authEndpoint = 'https://accounts.spotify.com/authorize';
+        const redirectUri = 'https://music.com'; // Replace with your own redirect URI
+        const searchEndpoint = 'https://api.spotify.com/v1/search';
+
+        // Spotify API scopes (permissions)
+        const scopes = ['user-library-read', 'user-library-modify', 'user-read-playback-state', 'user-modify-playback-state'];
+
+        // Function to authorize the Spotify API
+        function authorizeSpotify() {
+            // Construct the authorization URL
+            const authUrl = `${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join('%20')}&response_type=token`;
+
+            // Redirect the user to the authorization URL
+            window.location = authUrl;
+        }
+
+        // Function to handle song search and play
+        function searchAndPlaySong() {
+            const searchInput = document.getElementById('search-input').value;
+            const accessToken = getAccessToken(); // Get the access token from the URL hash
+
+            // Check if the access token is available
+            if (!accessToken) {
+                authorizeSpotify(); // Redirect to Spotify login page
+                return;
+            }
+
+            // Make a request to the Spotify API to search for a track
+            fetch(`${searchEndpoint}?q=${searchInput}&type=track`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Extract the first track from the search results
+                    const track = data.tracks.items[0];
+
+                    // Check if a track was found
+                    if (track) {
+                        const songContainer = document.getElementById('song-container');
+
+                        // Create an HTML audio element to play the song
+                        const audioPlayer = document.createElement('audio');
+                        audioPlayer.controls = true;
+                        audioPlayer.src = track.preview_url;
+
+                        // Display the song information and player
+                        songContainer.innerHTML = `
+                <h2>${track.name}</h2>
+                <p>Artist: ${track.artists[0].name}</p>
+            `;
+                        songContainer.appendChild(audioPlayer);
+                    } else {
+                        alert('No matching song found.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while searching for the song.');
+                });
+        }
+
+        // Function to extract the access token from the URL hash
+        function getAccessToken() {
+            const hashParams = window.location.hash.substr(1).split('&');
+            for (const param of hashParams) {
+                const parts = param.split('=');
+                if (parts[0] === 'access_token') {
+                    return parts[1];
+                }
+            }
+            return null;
+        }
+
+        // Event listener for the search button
+        document.getElementById('search-button').addEventListener('click', searchAndPlaySong);
+    </script>
+</body>
+
+</html>
