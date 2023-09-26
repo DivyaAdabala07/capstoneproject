@@ -1,5 +1,7 @@
 // Import required modules
 const express = require('express');
+var passwordHash = require("password-hash");
+const bodyParser = require("body-parser");
 const cors = require("cors");
 const colors = require("colors");
 const path = require('path');
@@ -19,7 +21,8 @@ const db = getFirestore();
 db.settings({ ignoreUndefinedProperties: true });
 // Create an Express application
 const app = express();
-
+app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: false}));
 
 // Serve static files (CSS and client-side JS)
 app.set("view engine", "ejs");
@@ -33,41 +36,57 @@ app.use(express.urlencoded({extended: true}));
 app.use(express.static(path.join(__dirname,"/public")));
 
 // Define a route to fetch holiday data from the Abstract API
+app.get("/",(req,res)=>{
+    res.render("home");
+})
 app.get("/login", (req,res) => {
     res.render("login");
 });
-app.get('/loginsubmit', (req, res) => {
-    const email = req.query.email;
-    const password = req.query.password;
 
-    db.collection("usersDemo")
+app.post("/loginsubmit", (req, res) => {
+   // passwordHash.verify(req.query.Password, hashedPassword)
+    const Email = req.body.Email;
+    const Password = req.body.Password;
 
-    .where("Email", "==", email)
-    .where("Password", "==", password)
-    .get()
-    .then((docs) =>{
-        if (docs.size > 0){
-            res.render("home")
-        }
-        else{
-            res.render("home")
-        }
-    });
+    db.collection("holiday")
+        .where("Email", "==", Email)
+        .get()
+        .then((docs) => {
+            let verified = false;
+            docs.forEach((doc) => {
+            verified = passwordHash.verify(Password, doc.data().Password);
+            });
+            if(verified){
+                res.render("home",{result: null});
+            }
+            else{
+                res.send("loginFail");
+            }
+            
+           // console.log(docs);
+           // if (docs.size > 0) {
+         //       res.render("home");
+         //   }else {
+         //       res.send("loginfail");
+        //    }
+        });
 });
-app.get("/signupsubmit", (req,res) => {
-    const name = req.query.name;
-    const email = req.query.email;
-    const password = req.query.password;
-    db.collection("usersDemo")
-    .add({
-        name:name,
-        email: email,
-        password: password,
-    })
-    .then(() => {
-        res.render("login");
-    })
-})
+
+app.post("/signupsubmit", (req, res) => {
+    const Email = req.body.Email;
+    const Password = req.body.Password;
+//Adding new data to collection
+    db.collection("holiday")
+        .add({
+            Email: Email,
+            Password: passwordHash.generate(Password),
+            
+        })
+        .then(()=>{
+            res.render("login");
+        });
+});
+
 /*app.get('/', async (req, res) => {
   try {
     const { year, country, month, day } = req.params;
@@ -104,10 +123,6 @@ app.post("/holiday",async(req,res) => {
         res.status(500).send({ message: "Server error" });
     }
 })
-app.get("/",(req,res)=>{
-    res.render("home");
-})
-
 
 // Start the server
 const PORT = process.env.PORT || 3000;
