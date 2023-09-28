@@ -73,34 +73,30 @@ app.post("/loginsubmit", (req, res) => {
 });
 
 app.post("/signupsubmit", (req, res) => {
-    const Email = req.body.Email;
-    const Password = req.body.Password;
-//Adding new data to collection
     db.collection("holiday")
-        .add({
-            Email: Email,
-            Password: passwordHash.generate(Password),
-            
-        })
-        .then(()=>{
-            res.render("login");
-        });
+    .where("Email", "==", req.body.Email)
+    .get()
+    .then((docs) => {
+        if(docs.size > 0){
+            res.send("Hey,This account already exists with Email.");
+        } 
+        else{
+            const Username = req.body.Username;
+            const Email = req.body.Email;
+            const Password = req.body.Password;
+            //Adding new data to collection
+            db.collection("holiday")
+            .add({
+                Email: Email,
+                Password: passwordHash.generate(Password),    
+            })
+            .then(()=>{
+                res.render("login");
+            });
+        }
+    });
 });
 
-/*app.get('/', async (req, res) => {
-  try {
-    const { year, country, month, day } = req.params;
-
-    // Make a request to the Abstract API
-    const response = await axios.get(`https://holidays.abstractapi.com/v1/?api_key=fbea48850b7447c8b3ac4ecfe4fbf252&year=${year}&country=${country}&month=${month}&day=${day}`);
-
-    // Send the response from the API to the client
-    res.json(response.data);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'An error occurred while fetching holiday data.' });
-  }
-});*/
 app.post("/holiday",async(req,res) => {
     try{
         const {country,year,month,day} = req.body;
