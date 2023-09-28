@@ -102,7 +102,6 @@ app.post("/holiday",async(req,res) => {
         const {country,year,month,day} = req.body;
         const countryParam = country === "India" ? "IN" : country;
         const apikey = "fbea48850b7447c8b3ac4ecfe4fbf252";
-        console.log(`https://holidays.abstractapi.com/v1/?api_key=${apikey}&country=${countryParam}&year=${year}&month=${month}&day=${day}`)
         const response = await fetch(`https://holidays.abstractapi.com/v1/?api_key=${apikey}&country=${countryParam}&year=${year}&month=${month}&day=${day}`);
         const data = await response.json();
         console.log(data);
@@ -121,7 +120,6 @@ app.post("/holiday",async(req,res) => {
 })
 
 // Start the server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+app.listen(
+  console.log(`Server is running on port ${port}`)
+);
